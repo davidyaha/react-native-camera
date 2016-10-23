@@ -388,6 +388,20 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
     resolve(@(device.hasFlash));
 }
 
+RCT_EXPORT_METHOD(startPreview) {
+#if TARGET_IPHONE_SIMULATOR
+    return;
+#endif
+    [self.session startRunning];
+}
+
+RCT_EXPORT_METHOD(stopPreview) {
+#if TARGET_IPHONE_SIMULATOR
+    return;
+#endif
+    [self.session stopRunning];
+}
+
 - (void)startSession {
 #if TARGET_IPHONE_SIMULATOR
   return;

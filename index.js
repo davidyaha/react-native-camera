@@ -7,6 +7,7 @@ import {
   StyleSheet,
   requireNativeComponent,
   View,
+  AppState,
 } from 'react-native';
 
 const CameraManager = NativeModules.CameraManager || NativeModules.CameraModule;
@@ -140,8 +141,11 @@ export default class Camera extends Component {
     super();
     this.state = {
       isAuthorized: false,
-      isRecording: false
+      isRecording: false,
+      isPreviewActive: true,
     };
+  
+    this._appStateChanged = this._appStateChanged.bind(this);
   }
 
   async componentWillMount() {
@@ -156,8 +160,15 @@ export default class Camera extends Component {
       this.setState({ isAuthorized });
     }
   }
+  
+  componentDidMount() {
+    console.log('Called didMount');
+    AppState.addEventListener('change', this._appStateChanged);
+  }
 
   componentWillUnmount() {
+    console.log('Called will unmount');
+    AppState.removeEventListener('change', this._appStateChanged);
     this._removeOnBarCodeReadListener()
 
     if (this.state.isRecording) {
@@ -186,6 +197,17 @@ export default class Camera extends Component {
     const listener = this.cameraBarCodeReadListener
     if (listener) {
       listener.remove()
+    }
+  }
+  
+  _appStateChanged(appState) {
+    if (this.state.isPreviewActive) {
+      console.log(appState);
+      if (appState === 'background' || appState === 'inactive') {
+        CameraManager.stopPreview();
+      } else if (appState === 'active') {
+        CameraManager.startPreview();
+      }
     }
   }
 
@@ -247,6 +269,31 @@ export default class Camera extends Component {
       });
     }
     return CameraManager.hasFlash();
+  }
+  
+  startPreview() {
+    if (Platform.OS === 'android') {
+      const props = convertNativeProps(this.props);
+      CameraManager.startPreview({
+        type: props.type
+      });
+    } else {
+      CameraManager.startPreview();
+    }
+    
+    this.setState({isPreviewActive: true});
+  }
+  
+  stopPreview() {
+    if (Platform.OS === 'android') {
+      const props = convertNativeProps(this.props);
+      CameraManager.stopPreview({
+        type: props.type
+      });
+    } else {
+      CameraManager.stopPreview();
+    }
+    this.setState({isPreviewActive: false});
   }
 }
 
